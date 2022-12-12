@@ -7,7 +7,7 @@ export default /* GraphQL */ gql`
 		id: ID
 		filename: String
         mimetype: String
-        path: String
+        path: String 
 	}
 
 	type Query {

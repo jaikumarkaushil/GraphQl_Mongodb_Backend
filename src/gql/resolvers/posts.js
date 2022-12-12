@@ -33,14 +33,16 @@ export default {
             context.di.authValidation.ensureThatUserIsLogged(context);
             return context.di.models.Posts.find().sort({ createdAt: 'asc'}).lean();
         },
-		getMyPosts:  async (parent, {userName, email}, context) => {
+		getMyPosts:  async (parent, args, context) => {
 			context.di.authValidation.ensureThatUserIsLogged(context);
 			const sortFilter = { createdAt: 'asc' };
-            if(userName) {
+            if(context.user && context.user.userName) {
+                const userName = context.user.userName
                 filteredPosts = context.di.models.Posts.findOne({userName}).lean();
                 return filteredPosts;
             }
-            if(email) {
+            if(context.user && context.user.email) {
+                const email = context.user.email
                 filteredPosts = context.di.models.Posts.findOne({email}).lean();
                 return filteredPosts;
             }
@@ -66,12 +68,17 @@ export default {
 	},
 	Mutation: {
         uploadPost: async (_, { file }, context) => {
+            context.di.authValidation.ensureThatUserIsLogged(context);
             mkdir("postImages", { recursive: true }, (err) => {
                 if (err) throw err;
             });
             const upload = await processUpload(file);
             // save our file to the mongodb
-            await context.di.model.File.create(upload);
+            const userId = context.user._id
+            console.log(userId)
+            const imageData = {idUser: userId, imageURL: upload.path}
+            const postImage = new context.di.model.Posts(imageData)
+            await postImage.save();
             return upload;
         },
 	}
