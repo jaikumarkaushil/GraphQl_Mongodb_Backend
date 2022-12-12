@@ -10,7 +10,7 @@ export default /* GraphQL */ gql`
 
 	type Query {
 		getPostLikes(idPost: ID): Int  
-        userLikedPosts(idUser: ID, idPost: ID): Like
+        userLikedPosts(idUser: ID, idPost: ID): [Like]
 		isLiked(idPost: ID): Boolean
 	}
 
