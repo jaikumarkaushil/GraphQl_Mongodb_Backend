@@ -35,6 +35,10 @@ export default {
 				userName: { $regex: search, $options: "i" },
 			}); 
 			return users;
+		},
+		me: async (_,args, context) => {
+			const user = await context.di.authValidation.getUser(context)
+			return user
 		}
 
 	},

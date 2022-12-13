@@ -29,11 +29,7 @@ const UsersSchema = new Schema({
 		type: String,
 		required: true
 	},
-	
-	// avatar: {
-	// 	type: String,
-	// 	trim: true,
-	// },
+
 	isActive: {
 		type: Boolean,
 		required: true,

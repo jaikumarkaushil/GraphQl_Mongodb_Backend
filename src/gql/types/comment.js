@@ -2,22 +2,16 @@ import { gql } from 'apollo-server-express';
 // import { gql } from "apollo-server";
 
 export default /* GraphQL */ gql`
-	type Like {
+	type Comment {
 		id: ID
 		idUser: ID
         idPost: ID
+        comment: String!
 		created_at: String!
     	updated_at: String!
 	}
 
-	type Query {
-		getPostLikes(idPost: ID): Int  
-        userLikedPosts(idUser: ID, idPost: ID): [Like]
-		isLiked(idPost: ID): Boolean
-	}
-
     type Mutation {
-        addLike(idPost: ID): Boolean
-        deleteLike(idPost: ID): Boolean
+        addComment(post_id: ID!, comment: String!): Comment
     }
 `;

@@ -65,11 +65,16 @@ export default {
 				throw new UserInputError('Invalid credentials');
 			}
 
-			await context.di.model.Users.findOneAndUpdate({ email }, { lastLogin: new Date().toISOString() }, { new: true }).lean();
+			await context.di.model.Users.findOneAndUpdate({ email }, { lastLogin: new Date().toISOString() }, {isActive: true}, { new: true }).lean();
 
 			return {
 				token: context.di.jwt.createAuthToken(user.email, user.isActive, user._id)
 			};
+		},
+
+		logout: async (_,args,context) => {
+			await context.di.model.Users.findOneAndUpdate({ email }, {isActive: false}, { new: true }).lean();
+			return 'Logged out successfully'
 		},
 		/**
 		 * It allows to user to delete their account permanently (this action does not delete the records associated with the user, it only deletes their user account)
@@ -79,7 +84,7 @@ export default {
 
 			const user = await context.di.authValidation.getUser(context);
 
-			return context.di.model.Users.deleteOne({ uuid: user.uuid });
+			return context.di.model.Users.deleteOne({ _id: user.uuid });
 		}
 	}
 };

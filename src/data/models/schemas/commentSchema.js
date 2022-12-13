@@ -12,18 +12,7 @@ const CommentSchema = new Schema({
         type: mongoose.Schema.Types.ObjectId,
         required: true,
         ref: 'Posts'
-    },
-	file: {
-        type: String,
-        filename: String,
-        mimetype: String,
-        path: String,
-    },
-	createdAt: {
-		type: Date,
-		required: true,
-		default: Date.now()
-	},
-});
+    }
+},{timestamps: true});
 
 export { CommentSchema };

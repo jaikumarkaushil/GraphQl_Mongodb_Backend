@@ -33,6 +33,10 @@ export default {
             context.di.authValidation.ensureThatUserIsLogged(context);
             return context.di.models.Posts.find().sort({ createdAt: 'asc'}).lean();
         },
+        getPost: async (_,{idUser},context) => {
+            const post = context.di.model.Posts.findOne({idUser}).lean();
+            return post;
+        },
 		getMyPosts:  async (parent, args, context) => {
 			context.di.authValidation.ensureThatUserIsLogged(context);
 			const sortFilter = { createdAt: 'asc' };
@@ -75,10 +79,10 @@ export default {
             const upload = await processUpload(file);
             // save our file to the mongodb
             const userId = context.user._id
-            console.log(userId)
             const imageData = {idUser: userId, imageURL: upload.path}
             const postImage = new context.di.model.Posts(imageData)
             await postImage.save();
+
             return upload;
         },
 	}

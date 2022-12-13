@@ -7,13 +7,15 @@ export default /* GraphQL */ gql`
 		userName: String
 		email: String
 		isActive: Boolean
-		registrationDate: String
-		lastLogin: String
+		registrationDate: String!
+		lastLogin: String!
+		posts: [Post!]!
 	}
 
 	type Query {
 		""" Get list of all users registered on database """
 		listAllUsers: [User]
+		me: User
 		getUser(id: ID, email: String): User
 		searchUser(search: String): [User]
 	}
