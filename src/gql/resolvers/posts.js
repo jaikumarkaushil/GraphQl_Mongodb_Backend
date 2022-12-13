@@ -31,7 +31,7 @@ export default {
 		 */
         getAllPosts: async (_,args) => {
             context.di.authValidation.ensureThatUserIsLogged(context);
-            return context.di.models.Posts.find().sort({ createdAt: 'asc'}).lean();
+            return context.di.models.Posts.find().sort({ createdAt: 'desc'}).populate("idUser").lean();
         },
         getPost: async (_,{idUser},context) => {
             const post = context.di.model.Posts.findOne({idUser}).lean();
@@ -42,12 +42,12 @@ export default {
 			const sortFilter = { createdAt: 'asc' };
             if(context.user && context.user.userName) {
                 const userName = context.user.userName
-                filteredPosts = context.di.models.Posts.findOne({userName}).lean();
+                filteredPosts = context.di.models.Posts.findOne({userName}).populate("idUser").lean();
                 return filteredPosts;
             }
             if(context.user && context.user.email) {
                 const email = context.user.email
-                filteredPosts = context.di.models.Posts.findOne({email}).lean();
+                filteredPosts = context.di.models.Posts.findOne({email}).populate("idUser").lean();
                 return filteredPosts;
             }
 		},
@@ -84,6 +84,6 @@ export default {
             await postImage.save();
 
             return upload;
-        },
+        }
 	}
 };
