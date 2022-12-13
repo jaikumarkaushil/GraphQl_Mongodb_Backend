@@ -65,7 +65,7 @@ export default {
 				throw new UserInputError('Invalid credentials');
 			}
 
-			await context.di.model.Users.findOneAndUpdate({ email }, { lastLogin: new Date().toISOString() }, {isActive: true}, { new: true }).lean();
+			await context.di.model.Users.findOneAndUpdate({ email }, { lastLogin: new Date().toISOString(), isActive: true }, { new: true }).lean();
 
 			return {
 				token: context.di.jwt.createAuthToken(user.email, user.isActive, user._id)
