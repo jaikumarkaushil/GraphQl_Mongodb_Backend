@@ -33,12 +33,10 @@ export default {
 			const userFollowers = await context.di.model.Follows.find({ "idUser": userId }).count();
 			const userFollowing = await context.di.model.Follows.find({ "idFollower": userId }).count();
 			const userPosts = await posts.Query.getPost(_, { userName }, context);
-			console.log(userPosts);
-			user.posts = userPosts;
+			user["posts"] = userPosts;
 			user["totalPosts"] = userPosts.length
 			user["totalFollowers"] = userFollowers
 			user["totalFollowing"] = userFollowing
-			console.log(user)
 			return user;
 
 
