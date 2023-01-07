@@ -29,10 +29,17 @@ const UsersSchema = new Schema({
 		type: String,
 		required: true
 	},
+	profileImage: {
+        type: String
+    },
 	isActive: {
 		type: Boolean,
 		required: true,
 		default: true
+	},
+	isPrivate: {
+		type: Boolean,
+		default: false
 	},
 	registrationDate: {
 		type: Date,
@@ -43,6 +50,9 @@ const UsersSchema = new Schema({
 		type: Date,
 		required: true,
 		default: Date.now()
+	},
+	lastLogout: {
+		type: Date
 	}
 });
 

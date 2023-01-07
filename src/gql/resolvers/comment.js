@@ -11,17 +11,17 @@ export default {
 	},
 	Mutation: {
         addComment: async (_,{idPost, comment},context) => {
-            try {
-                const comment = new context.di.model.Comments.findOne({
-                    idPost,
-                    idUser: context.user._id,
-                    comment: comment
-                });
-                comment.save();
-                return true;
-            } catch (error) {
-                console.log(error);
-                return false;
+            const addedComment = await new context.di.model.Comments({
+                idPost,
+                idUser: context.user.id,
+                comment
+            })
+            if (addedComment){
+                addedComment.save();
+                return {"message": "You have unliked the post", "success": true};
+            }
+            else {
+                return {"message": "Something went wrong! Try again", "success": false};
             }
         }
 	}

@@ -3,16 +3,18 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const LikeSchema = new Schema({
-	idUser: {
+    idUser: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: "Users",
+        unique: true,
+        ref: "users",
     },
     idPost: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: 'Posts'
+        unique: true,
+        ref: 'posts'
     }
-},{timestamps: true});
+}, { timestamps: true });
 
 export { LikeSchema };

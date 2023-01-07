@@ -1,89 +1,112 @@
-import { createWriteStream, mkdir } from "fs";
-import shortid from "shortid";
+import { mkdir } from "fs";
+import { processUpload } from './uploadImage.js';
 /**
  * All resolvers related to posts
  * @typedef {Object}
  */
 let Likes = (context) => context.di.model.Likes;
 
-const storeUpload = async ({ stream, filename, mimetype }) => {
-    const id = shortid.generate();
-    const path = `images/${id}-${filename}`;
-    return new Promise((resolve, reject) =>
-    stream
-        .pipe(createWriteStream(path))
-        .on("finish", () => resolve({ id, path, filename, mimetype }))
-        .on("error", reject)
-    );
-};
-const processUpload = async (upload) => {
-    const uploadedData = await upload
-    const { createReadStream, filename, mimetype } = uploadedData;
-    const stream = createReadStream();
-    const file = await storeUpload({ stream, filename, mimetype });
-    return file;
-};
-
 export default {
-	Query: {
-		/**
-		 * It allows to administrators users to list all users registered
-		 */
-        getAllPosts: async (_,args) => {
+    Query: {
+        /**
+         * It allows to administrators users to list all users registered
+         */
+        getAllPosts: async (_, args, context) => {
             context.di.authValidation.ensureThatUserIsLogged(context);
-            return context.di.models.Posts.find().sort({ createdAt: 'desc'}).populate("idUser").lean();
+            return context.di.model.Posts.find().sort({ createdAt: 'desc' }).populate("idUser").lean();
         },
-        getPost: async (_,{idUser},context) => {
-            const post = context.di.model.Posts.findOne({idUser}).lean();
-            return post;
-        },
-		getMyPosts:  async (parent, args, context) => {
-			context.di.authValidation.ensureThatUserIsLogged(context);
-			const sortFilter = { createdAt: 'asc' };
-            if(context.user && context.user.userName) {
-                const userName = context.user.userName
-                filteredPosts = context.di.models.Posts.findOne({userName}).populate("idUser").lean();
-                return filteredPosts;
-            }
-            if(context.user && context.user.email) {
-                const email = context.user.email
-                filteredPosts = context.di.models.Posts.findOne({email}).populate("idUser").lean();
-                return filteredPosts;
-            }
-		},
-        // isLiked: async (_, {idPost}, context) => {
-        //     return;
-        // },
-		// countLikes: async (_, {id, email}, context) => {
-		// 	let user = null;
-		// 	// if (id) {
-		// 	// 	user = await Users(context).findById(id);
-		// 	// 	return user
-		// 	// }
-		// 	// if (email){
-		// 	// 	user = await Users(context).findOne({email});
-		// 	// 	return user
-		// 	// }
-		// 	// if (!user){ 
-		// 	// 	throw new Error("User not found in our database");
-		// 	// }'
-        //     return user;
-		// }
-	},
-	Mutation: {
-        uploadPost: async (_, { file }, context) => {
+        getPost: async (_, { userName }, context) => {
             context.di.authValidation.ensureThatUserIsLogged(context);
-            mkdir("postImages", { recursive: true }, (err) => {
+            const user = await context.di.model.Users.findOne({ userName: userName }).lean();
+            const userId = user._id
+            const qPosts = await context.di.model.Posts.aggregate([
+                { "$match": { "idUser": userId } },
+                {
+                    "$set": {
+                        "idUser": user
+                    }
+                },
+                {
+                    "$lookup": {
+                        from: "likes",
+                        localField: "_id",
+                        foreignField: "idPost",
+                        as: "postLikes"
+                    }
+                },
+                {
+                    "$lookup": {
+                        from: "comments",
+                        localField: "_id",
+                        foreignField: "idPost",
+                        as: "comments"
+                    }
+                },
+            ])
+            qPosts.forEach(post => {
+                post["likes"] = post.postLikes.length
+                console.log(post)
+            })
+            return qPosts
+        },
+        getMyPosts: async (parent, args, context) => {
+            context.di.authValidation.ensureThatUserIsLogged(context);
+            const user = await context.di.authValidation.getUser(context);
+            const userId = user._id
+            // use either mongoDB agregat or deafult calling method
+            // const myPosts = user.posts
+            // myPosts["idUser"] = user
+            // myPosts["postLikes"] = await Likes(context).find({ idPost: myPosts._id });
+            // myPosts["likes"] = myPosts.postLikes.length
+            // myPosts["comments"] = await context.di.model.Comments.find({ idPost: myPosts._id });
+            // console.log(myPosts)
+
+
+            const myPosts = await context.di.model.Posts.aggregate([
+                { "$match": { "idUser": userId } },
+                {
+                    "$set": {
+                        "idUser": user
+                    }
+                },
+                {
+                    "$lookup": {
+                        from: "likes",
+                        localField: "_id",
+                        foreignField: "idPost",
+                        as: "postLikes"
+                    }
+                },
+                {
+                    "$lookup": {
+                        from: "comments",
+                        localField: "_id",
+                        foreignField: "idPost",
+                        as: "comments"
+                    }
+                }
+            ])
+            myPosts.forEach(post => {
+                post["likes"] = post.postLikes.length
+            })
+            return myPosts
+        },
+    },
+    Mutation: {
+        uploadPost: async (_, { file, caption }, context) => {
+            context.di.authValidation.ensureThatUserIsLogged(context);
+            mkdir("images/posts", { recursive: true }, (err) => {
                 if (err) throw err;
             });
-            const upload = await processUpload(file);
-            // save our file to the mongodb
-            const userId = context.user._id
-            const imageData = {idUser: userId, imageURL: upload.path}
+            const upload = await processUpload(file, "images/posts");
+
+            // saving our file to the mongodb
+            const userId = context.user.id
+            const imageData = { idUser: userId, imageURL: upload.path, caption: caption }
             const postImage = new context.di.model.Posts(imageData)
             await postImage.save();
 
-            return upload;
+            return { "message": "Image with caption is successfully posted" };
         }
-	}
+    }
 };

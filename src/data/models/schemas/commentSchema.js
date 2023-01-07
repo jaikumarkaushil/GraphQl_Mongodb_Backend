@@ -3,16 +3,19 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const CommentSchema = new Schema({
-	idUser: {
+    idUser: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: "Users",
+        ref: "users",
     },
     idPost: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        ref: 'Posts'
-    }
-},{timestamps: true});
+        ref: 'posts'
+    },
+    comment: {
+        type: String,
+    },
+}, { timestamps: true });
 
 export { CommentSchema };

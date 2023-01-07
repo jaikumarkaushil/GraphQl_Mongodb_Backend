@@ -18,7 +18,7 @@ import { environmentVariablesConfig } from './config/appConfig.js';
 import { logger, endLogger } from './helpers/logger.js';
 import { requestDevLogger } from './helpers/requestDevLogger.js';
 import { setContext } from './gql/auth/setContext.js';
-import { initTypeDefinition } from './gql/types/index.js';
+import typeDefs from './gql/types/index.js';
 import { resolvers } from './gql/resolvers/index.js';
 import { getListOfIPV4Address } from './helpers/getListOfIPV4Address.js';
 import routesManager from './routes/routesManager.js';
@@ -34,39 +34,15 @@ if (environmentVariablesConfig.formatConnection === 'DNSseedlist' && environment
 	}
 }
 
-const db = mongoose.connection;
-db.on('error', (err) => {
-	logger.error(`Connection error with database. ${err}`);
-});
 
-db.once('open', () => {
-	if (environmentVariablesConfig.environment !== ENVIRONMENT.DEVELOPMENT) {
-		logger.info(`Connected with MongoDB service (${ENVIRONMENT.PRODUCTION} mode)`);
-	} else {
-		if (environmentVariablesConfig.formatConnection === 'DNSseedlist' && environmentVariablesConfig.mongoDNSseedlist !== '') {
-			logger.info(`Connected with MongoDB service at "${environmentVariablesConfig.mongoDNSseedlist}" using database "${environmentVariablesConfig.database}" (${ENVIRONMENT.DEVELOPMENT} mode)`);
-		} else {
-			logger.info(`Connected with MongoDB service at "${environmentVariablesConfig.dbHost}" in port "${environmentVariablesConfig.dbPort}" using database "${environmentVariablesConfig.database}" (${ENVIRONMENT.DEVELOPMENT} mode)`);
-		}
-	}
-
-	initApplication();
-});
 
 const initApplication = async () => {
 	const app = express();
-	// if (environmentVariablesConfig.environment === ENVIRONMENT.PRODUCTION) {
-	// 	app.use(helmet());
-	// } else {
-	// 	// Allow GraphQL Playground on development environments
-	// 	app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
-	// }
 	app.use(cors({ credentials: true }));
 	const __dirname = path.dirname(fileURLToPath(import.meta.url));
 	app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 	app.use('', routesManager);
 	app.use(graphqlUploadExpress())
-	const typeDefs = await initTypeDefinition();
 
 	const server = new ApolloServer({ 
 		typeDefs,
@@ -108,3 +84,22 @@ const initApplication = async () => {
 		process.exit();
 	});
 };
+
+const db = mongoose.connection;
+db.on('error', (err) => {
+	logger.error(`Connection error with database. ${err}`);
+});
+
+db.once('open', () => {
+	if (environmentVariablesConfig.environment !== ENVIRONMENT.DEVELOPMENT) {
+		logger.info(`Connected with MongoDB service (${ENVIRONMENT.PRODUCTION} mode)`);
+	} else {
+		if (environmentVariablesConfig.formatConnection === 'DNSseedlist' && environmentVariablesConfig.mongoDNSseedlist !== '') {
+			logger.info(`Connected with MongoDB service at "${environmentVariablesConfig.mongoDNSseedlist}" using database "${environmentVariablesConfig.database}" (${ENVIRONMENT.DEVELOPMENT} mode)`);
+		} else {
+			logger.info(`Connected with MongoDB service at "${environmentVariablesConfig.dbHost}" in port "${environmentVariablesConfig.dbPort}" using database "${environmentVariablesConfig.database}" (${ENVIRONMENT.DEVELOPMENT} mode)`);
+		}
+	}
+
+	initApplication();
+});

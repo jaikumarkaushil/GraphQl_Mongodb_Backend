@@ -5,7 +5,7 @@ const Schema = mongoose.Schema;
 const PostSchema = new Schema({
 	idUser: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        ref: "users",
     },
 	imageURL: {
         type: String,

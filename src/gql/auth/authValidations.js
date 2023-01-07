@@ -56,8 +56,8 @@ export const authValidations = {
 		if (!context.user) {
 			return null;
 		}
-	
-		const userUUID = context.user._id || null;
+		console.log(context.user)
+		const userUUID = context.user.id || null;
 		const user = await models.Users.findById(userUUID).lean();
 		if (!user) {
 			throw new AuthenticationError('You must be logged in to perform this action');

@@ -12,6 +12,9 @@ export default /* GraphQL */ gql`
 		""" It allows users to authenticate """
 		authUser(email: String!, password: String!): Token
 
+		""" It allows user to update their profile """
+		# updateUser(email: String!, userName: String!, fullName: String!): User
+		
 		logout: String!
 		""" It allows to user to delete their account permanently """
 		deleteMyUserAccount: DeleteResult

@@ -1,4 +1,4 @@
-import { validateAuthToken, createAuthToken } from './jwt.js';
+import { validateAuthToken, createAuthToken, destroyAuthToken } from './jwt.js';
 import { environmentVariablesConfig } from '../../config/appConfig.js';
 import { authValidations } from '../auth/authValidations.js';
 import { ENVIRONMENT } from '../../config/environment.js';
@@ -9,6 +9,7 @@ import { models } from '../../data/models/index.js';
  * Context function from Apollo Server
  */
 export const setContext = async ({ req }) => {
+	let token = req.headers['authorization'];
 	const context = {
 		di: {
 			model: {
@@ -18,12 +19,15 @@ export const setContext = async ({ req }) => {
 				...authValidations
 			},
 			jwt: {
-				createAuthToken: createAuthToken
-			}
+				createAuthToken: createAuthToken,
+				validateAuthToken: validateAuthToken,
+				destroyAuthToken: destroyAuthToken
+			},
+			suppliedToken: token
 		}
 	};
 
-	let token = req.headers['authorization'];
+	
 
 	if (token && typeof token === 'string') {
 		try {
@@ -31,7 +35,7 @@ export const setContext = async ({ req }) => {
 			if (token.startsWith(authenticationScheme)) {
 				token = token.slice(authenticationScheme.length, token.length);
 			}
-			const user = await validateAuthToken(token);
+			const user = await validateAuthToken(context.di.suppliedToken);
 			context.user = user; // Add to Apollo Server context the user who is doing the request if auth token is provided and it's a valid token
 		} catch (error) {
 			if (environmentVariablesConfig.environment !== ENVIRONMENT.PRODUCTION) {

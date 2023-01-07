@@ -1,5 +1,7 @@
 import { UserInputError } from 'apollo-server-express';
 import bcrypt from 'bcrypt';
+import { mkdir } from "fs";
+import {processUpload} from './uploadImage.js';
 
 import { isValidEmail, isStrongPassword } from '../../helpers/validations.js';
 
@@ -14,7 +16,7 @@ export default {
 		/**
 		 * It allows to users to register as long as the limit of allowed users has not been reached
 		 */
-		registerUser: async (parent, { email, password, fullName, userName }, context) => {
+		registerUser: async (parent, { email, password, fullName, userName, image }, context) => {
 			if (!email || !password) {
 				throw new UserInputError('Data provided is not valid');
 			}
@@ -36,13 +38,18 @@ export default {
 			if (isAnEmailAlreadyRegistered) {
 				throw new UserInputError('Data provided is not valid');
 			}
+			const imageLocation = "images/profile"
 
-			await new context.di.model.Users({ email, password, fullName, userName }).save();
+			mkdir(imageLocation, { recursive: true }, (err) => {
+                if (err) throw err;
+            });
+            const profile = await processUpload(image, imageLocation);
+			const profileImage = profile.path
+			await new context.di.model.Users({ email, password, fullName, userName, profileImage }).save();
 
 			const user = await context.di.model.Users.findOne({ email }).lean();
-
 			return {
-				token: context.di.jwt.createAuthToken(user.email, user.isActive, user._id)
+				token: context.di.jwt.createAuthToken(user.email, user.userName, user.isActive, user._id)
 			};
 		},
 		/**
@@ -52,8 +59,8 @@ export default {
 			if (!email || !password) {
 				throw new UserInputError('Invalid credentials');
 			}
-
-			const user = await context.di.model.Users.findOne({ email, isActive: true }).lean();
+			
+			const user = await context.di.model.Users.findOne({ email }).lean();
 
 			if (!user) {
 				throw new UserInputError('User not found or login not allowed');
@@ -68,12 +75,38 @@ export default {
 			await context.di.model.Users.findOneAndUpdate({ email }, { lastLogin: new Date().toISOString(), isActive: true }, { new: true }).lean();
 
 			return {
-				token: context.di.jwt.createAuthToken(user.email, user.isActive, user._id)
+				token: context.di.jwt.createAuthToken(user.email, user.userName, user.isActive, user._id)
 			};
 		},
 
+		// updateUser: async (parent, { email, userName, fullName }, context) => {
+		// 	if (!email || !password) {
+		// 		throw new UserInputError('Invalid credentials');
+		// 	}
+
+		// 	const user = await context.di.model.Users.findOne({ email, isActive: true }).lean();
+
+		// 	if (!user) {
+		// 		throw new UserInputError('User not found or login not allowed');
+		// 	}
+
+		// 	const isCorrectPassword = await bcrypt.compare(password, user.password);
+
+		// 	if (!isCorrectPassword) {
+		// 		throw new UserInputError('Invalid credentials');
+		// 	}
+
+		// 	await context.di.model.Users.findOneAndUpdate({ email }, { lastLogin: new Date().toISOString(), isActive: true }, { new: true }).lean();
+
+		// 	return {
+		// 		token: context.di.jwt.createAuthToken(user.email, user.userName, user.isActive, user._id)
+		// 	};
+		// },
+
 		logout: async (_,args,context) => {
-			await context.di.model.Users.findOneAndUpdate({ email }, {isActive: false}, { new: true }).lean();
+			context.di.authValidation.ensureThatUserIsLogged(context);
+			const userId = context.user.id
+			await context.di.model.Users.findOneAndUpdate({_id: userId}, {isActive: false, lastLogout: Date.now()}, { new: true }).lean();
 			return 'Logged out successfully'
 		},
 		/**
